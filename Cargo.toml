@@ -1,0 +1,17 @@
+[package]
+name = "rankfusion"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.70"
+description = "Backend-agnostic rank aggregation, score fusion, and reranking for ranked candidate lists — RRF, weighted RRF, linear score fusion, composable reranking pipelines."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Lsh0x/rankfusion"
+documentation = "https://docs.rs/rankfusion"
+readme = "README.md"
+keywords = ["ranking", "rank-fusion", "rrf", "reranking", "search"]
+categories = ["algorithms", "data-structures"]
+
+[dependencies]
+
+[features]
+default = []
