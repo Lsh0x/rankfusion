@@ -1,3 +1,10 @@
 /target
 Cargo.lock
-/.claude/worktrees/
+
+# anatta substrate scaffold — local only, never committed
+/.claude/
+/.githooks/
+/.mcp.json
+/VERSION
+/.artifacts/
+/.a2m/
