@@ -58,6 +58,25 @@ is only the second one.
 - **`ahash` feature flag** — optional faster hashing; `std::collections::HashMap`
   by default.
 
+## Evaluating your fusion config
+
+The optional `eval` feature (zero extra dependencies) ships `ndcg@k`, MRR and
+`recall@k` to compare fusion configurations against your own ground truth —
+RRF `k=60` vs `k=20`, RRF vs linear fusion, weight tuning:
+
+```toml
+rankfusion = { version = "0.0", features = ["eval"] }
+```
+
+```rust
+use rankfusion::eval::ndcg_at_k;
+// fuse with each candidate config, then score the rankings against judgments
+let quality = ndcg_at_k(&ranking_ids, &judgments, 10);
+```
+
+Criterion benchmarks live in `benches/` (`cargo bench`) and back the
+`O(total + n log n)` complexity claim.
+
 ## Non-goals
 
 ANN indexes, vector databases, BM25, tokenizers, embeddings, document storage,
