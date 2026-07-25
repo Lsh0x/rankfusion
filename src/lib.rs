@@ -29,5 +29,7 @@
 //! The roadmap lives in the [repository issues](https://github.com/Lsh0x/rankfusion/issues).
 
 pub mod core;
+pub mod fusion;
 
 pub use crate::core::{Candidate, FirstWins, MergePolicy, RankedList, Scored, ScoredList};
+pub use crate::fusion::{FusionError, Rrf, WeightedRrf};
