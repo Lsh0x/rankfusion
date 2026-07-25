@@ -123,6 +123,28 @@ impl WeightedRrf {
     }
 }
 
+impl<Id, Metadata> super::Fusion<Id, Metadata> for Rrf
+where
+    Id: Eq + Hash + Clone,
+{
+    type Input = RankedList<Id, Metadata>;
+
+    fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError> {
+        Ok(Rrf::fuse(self, lists))
+    }
+}
+
+impl<Id, Metadata> super::Fusion<Id, Metadata> for WeightedRrf
+where
+    Id: Eq + Hash + Clone,
+{
+    type Input = RankedList<Id, Metadata>;
+
+    fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError> {
+        WeightedRrf::fuse(self, lists)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

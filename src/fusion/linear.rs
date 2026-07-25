@@ -107,6 +107,18 @@ impl<N: Normalizer> LinearFusion<N> {
     }
 }
 
+impl<Id, Metadata, N> super::Fusion<Id, Metadata> for LinearFusion<N>
+where
+    Id: Eq + Hash + Clone,
+    N: Normalizer,
+{
+    type Input = ScoredList<Id, Metadata>;
+
+    fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError> {
+        LinearFusion::fuse(self, lists)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
