@@ -17,3 +17,11 @@ ahash = { version = "0.8", optional = true }
 [features]
 default = []
 ahash = ["dep:ahash"]
+eval = []
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "fusion"
+harness = false

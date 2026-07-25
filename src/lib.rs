@@ -57,6 +57,8 @@
 //! The roadmap lives in the [repository issues](https://github.com/Lsh0x/rankfusion/issues).
 
 pub mod core;
+#[cfg(feature = "eval")]
+pub mod eval;
 pub mod explain;
 pub mod fusion;
 pub mod normalization;
