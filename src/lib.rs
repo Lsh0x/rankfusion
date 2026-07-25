@@ -30,6 +30,8 @@
 
 pub mod core;
 pub mod fusion;
+pub mod normalization;
 
 pub use crate::core::{Candidate, FirstWins, MergePolicy, RankedList, Scored, ScoredList};
-pub use crate::fusion::{FusionError, Rrf, WeightedRrf};
+pub use crate::fusion::{FusionError, LinearFusion, Rrf, WeightedRrf};
+pub use crate::normalization::{MinMax, Normalizer, Softmax, ZScore};
