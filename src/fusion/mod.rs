@@ -44,6 +44,21 @@ impl std::fmt::Display for FusionError {
 
 impl std::error::Error for FusionError {}
 
+/// A fusion strategy usable in a [`crate::reranking::Pipeline`].
+///
+/// The input list type is an associated type: rank-based strategies
+/// ([`Rrf`], [`WeightedRrf`]) consume [`RankedList`]s, score-based ones
+/// ([`LinearFusion`]) consume [`crate::ScoredList`]s — the compiler enforces
+/// the match, mixing is impossible. The return is uniformly `Result` so
+/// pipelines have a single signature; infallible strategies always return
+/// `Ok`.
+pub trait Fusion<Id, Metadata> {
+    /// The input list type this strategy consumes.
+    type Input;
+
+    fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError>;
+}
+
 struct Acc<Id, Metadata> {
     scored: Scored<Id, Metadata>,
     first_seen: usize,
