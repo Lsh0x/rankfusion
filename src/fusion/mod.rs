@@ -11,15 +11,17 @@
 //! the result without cloning; only `Id: Clone` is required (one clone per
 //! distinct candidate, used as the accumulator key).
 
+mod linear;
 mod rrf;
 
+pub use linear::LinearFusion;
 pub use rrf::{Rrf, WeightedRrf};
 
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use crate::core::{MergePolicy, RankedList, Scored};
+use crate::core::{Candidate, MergePolicy, RankedList, Scored};
 
 /// Errors produced by fallible fusion strategies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,13 +49,13 @@ struct Acc<Id, Metadata> {
     first_seen: usize,
 }
 
-/// Shared RRF accumulation: `score(c) = Σ weight_i / (k + rank_i(c))`,
-/// rank starting at 1. `weights`, when present, is already validated to
-/// match `lists` in length.
-pub(crate) fn accumulate_rrf<Id, Metadata, P>(
-    k: f32,
-    lists: Vec<RankedList<Id, Metadata>>,
-    weights: Option<&[f32]>,
+/// Shared accumulation core for every fusion strategy: merge `(candidate,
+/// contribution)` pairs into a hash map (summing contributions, merging
+/// metadata via `policy`), then sort by fused score descending. Ties break by
+/// first-seen order, so the output is deterministic regardless of the map's
+/// iteration order or hasher.
+pub(crate) fn accumulate_contributions<Id, Metadata, P>(
+    contributions: impl IntoIterator<Item = (Candidate<Id, Metadata>, f32)>,
     policy: &P,
 ) -> Vec<Scored<Id, Metadata>>
 where
@@ -63,27 +65,22 @@ where
     let mut acc: HashMap<Id, Acc<Id, Metadata>> = HashMap::new();
     let mut first_seen = 0usize;
 
-    for (list_index, list) in lists.into_iter().enumerate() {
-        let weight = weights.map_or(1.0, |w| w[list_index]);
-        for (position, candidate) in list.items.into_iter().enumerate() {
-            let rank = position + 1;
-            let contribution = weight / (k + rank as f32);
-            match acc.entry(candidate.id.clone()) {
-                Entry::Occupied(mut entry) => {
-                    let slot = entry.get_mut();
-                    slot.scored.score += contribution;
-                    policy.merge(&mut slot.scored.candidate.metadata, candidate.metadata);
-                }
-                Entry::Vacant(entry) => {
-                    entry.insert(Acc {
-                        scored: Scored {
-                            candidate,
-                            score: contribution,
-                        },
-                        first_seen,
-                    });
-                    first_seen += 1;
-                }
+    for (candidate, contribution) in contributions {
+        match acc.entry(candidate.id.clone()) {
+            Entry::Occupied(mut entry) => {
+                let slot = entry.get_mut();
+                slot.scored.score += contribution;
+                policy.merge(&mut slot.scored.candidate.metadata, candidate.metadata);
+            }
+            Entry::Vacant(entry) => {
+                entry.insert(Acc {
+                    scored: Scored {
+                        candidate,
+                        score: contribution,
+                    },
+                    first_seen,
+                });
+                first_seen += 1;
             }
         }
     }
@@ -96,4 +93,33 @@ where
             .then(a.first_seen.cmp(&b.first_seen))
     });
     out.into_iter().map(|a| a.scored).collect()
+}
+
+/// RRF accumulation: `score(c) = Σ weight_i / (k + rank_i(c))`, rank starting
+/// at 1. `weights`, when present, is already validated to match `lists` in
+/// length.
+pub(crate) fn accumulate_rrf<Id, Metadata, P>(
+    k: f32,
+    lists: Vec<RankedList<Id, Metadata>>,
+    weights: Option<&[f32]>,
+    policy: &P,
+) -> Vec<Scored<Id, Metadata>>
+where
+    Id: Eq + Hash + Clone,
+    P: MergePolicy<Metadata>,
+{
+    let contributions = lists
+        .into_iter()
+        .enumerate()
+        .flat_map(|(list_index, list)| {
+            let weight = weights.map_or(1.0, |w| w[list_index]);
+            list.items
+                .into_iter()
+                .enumerate()
+                .map(move |(position, candidate)| {
+                    let rank = position + 1;
+                    (candidate, weight / (k + rank as f32))
+                })
+        });
+    accumulate_contributions(contributions, policy)
 }
