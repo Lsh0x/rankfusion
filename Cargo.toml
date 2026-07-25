@@ -12,6 +12,8 @@ keywords = ["ranking", "rank-fusion", "rrf", "reranking", "search"]
 categories = ["algorithms", "data-structures"]
 
 [dependencies]
+ahash = { version = "0.8", optional = true }
 
 [features]
 default = []
+ahash = ["dep:ahash"]

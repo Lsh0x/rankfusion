@@ -18,8 +18,15 @@ pub use linear::LinearFusion;
 pub use rrf::{Rrf, WeightedRrf};
 
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 use std::hash::Hash;
+
+/// Accumulator map: `std::collections::HashMap` by default, `ahash::AHashMap`
+/// behind the `ahash` feature. The hasher never affects ranking output — ties
+/// break by first-seen order, not iteration order.
+#[cfg(feature = "ahash")]
+pub(crate) type FxMap<K, V> = ahash::AHashMap<K, V>;
+#[cfg(not(feature = "ahash"))]
+pub(crate) type FxMap<K, V> = std::collections::HashMap<K, V>;
 
 use crate::core::{Candidate, MergePolicy, RankedList, Scored};
 use crate::explain::{Explained, SourceContribution};
@@ -86,7 +93,7 @@ where
     Id: Eq + Hash + Clone,
     P: MergePolicy<Metadata>,
 {
-    let mut acc: HashMap<Id, Acc<Id, Metadata>> = HashMap::new();
+    let mut acc: FxMap<Id, Acc<Id, Metadata>> = FxMap::default();
     let mut first_seen = 0usize;
 
     for (candidate, contribution) in contributions {
@@ -135,7 +142,7 @@ where
     Id: Eq + Hash + Clone,
     P: MergePolicy<Metadata>,
 {
-    let mut acc: HashMap<Id, AccExplained<Id, Metadata>> = HashMap::new();
+    let mut acc: FxMap<Id, AccExplained<Id, Metadata>> = FxMap::default();
     let mut first_seen = 0usize;
 
     for (candidate, contribution) in entries {
