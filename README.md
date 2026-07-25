@@ -1,5 +1,6 @@
 # rankfusion
 
+[![CI](https://github.com/Lsh0x/rankfusion/actions/workflows/ci.yml/badge.svg)](https://github.com/Lsh0x/rankfusion/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/rankfusion.svg)](https://crates.io/crates/rankfusion)
 [![docs.rs](https://docs.rs/rankfusion/badge.svg)](https://docs.rs/rankfusion)
 [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
