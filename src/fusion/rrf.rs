@@ -123,6 +123,45 @@ impl WeightedRrf {
     }
 }
 
+impl Rrf {
+    /// [`Rrf::fuse`] with per-source contribution tracing — see
+    /// [`crate::explain`]. Separate accumulation path: `fuse` stays untouched.
+    pub fn fuse_explained<Id, Metadata>(
+        &self,
+        lists: Vec<RankedList<Id, Metadata>>,
+    ) -> Vec<crate::explain::Explained<Id, Metadata>>
+    where
+        Id: Eq + Hash + Clone,
+    {
+        super::explained_rrf(self.k, lists, None, &FirstWins)
+    }
+}
+
+impl WeightedRrf {
+    /// [`WeightedRrf::fuse`] with per-source contribution tracing — see
+    /// [`crate::explain`].
+    pub fn fuse_explained<Id, Metadata>(
+        &self,
+        lists: Vec<RankedList<Id, Metadata>>,
+    ) -> Result<Vec<crate::explain::Explained<Id, Metadata>>, FusionError>
+    where
+        Id: Eq + Hash + Clone,
+    {
+        if self.weights.len() != lists.len() {
+            return Err(FusionError::WeightCountMismatch {
+                expected: self.weights.len(),
+                got: lists.len(),
+            });
+        }
+        Ok(super::explained_rrf(
+            self.k,
+            lists,
+            Some(&self.weights),
+            &FirstWins,
+        ))
+    }
+}
+
 impl<Id, Metadata> super::Fusion<Id, Metadata> for Rrf
 where
     Id: Eq + Hash + Clone,
@@ -131,6 +170,13 @@ where
 
     fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError> {
         Ok(Rrf::fuse(self, lists))
+    }
+
+    fn fuse_explained(
+        &self,
+        lists: Vec<Self::Input>,
+    ) -> Result<Vec<crate::explain::Explained<Id, Metadata>>, FusionError> {
+        Ok(Rrf::fuse_explained(self, lists))
     }
 }
 
@@ -142,6 +188,13 @@ where
 
     fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError> {
         WeightedRrf::fuse(self, lists)
+    }
+
+    fn fuse_explained(
+        &self,
+        lists: Vec<Self::Input>,
+    ) -> Result<Vec<crate::explain::Explained<Id, Metadata>>, FusionError> {
+        WeightedRrf::fuse_explained(self, lists)
     }
 }
 

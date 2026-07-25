@@ -107,6 +107,46 @@ impl<N: Normalizer> LinearFusion<N> {
     }
 }
 
+impl<N: Normalizer> LinearFusion<N> {
+    /// [`LinearFusion::fuse`] with per-source contribution tracing — see
+    /// [`crate::explain`]. Separate accumulation path: `fuse` stays untouched.
+    pub fn fuse_explained<Id, Metadata>(
+        &self,
+        lists: Vec<ScoredList<Id, Metadata>>,
+    ) -> Result<Vec<crate::explain::Explained<Id, Metadata>>, FusionError>
+    where
+        Id: Eq + Hash + Clone,
+    {
+        if self.weights.len() != lists.len() {
+            return Err(FusionError::WeightCountMismatch {
+                expected: self.weights.len(),
+                got: lists.len(),
+            });
+        }
+
+        let mut scratch: Vec<f32> = Vec::new();
+        let mut entries = Vec::new();
+        for (list_index, (list, &weight)) in lists.into_iter().zip(&self.weights).enumerate() {
+            scratch.clear();
+            scratch.extend(list.items.iter().map(|s| s.score));
+            self.normalizer.normalize(&mut scratch);
+            entries.extend(list.items.into_iter().zip(&scratch).enumerate().map(
+                |(position, (scored, &norm))| {
+                    (
+                        scored.candidate,
+                        crate::explain::SourceContribution {
+                            list_index,
+                            rank: position + 1,
+                            partial_score: weight * norm,
+                        },
+                    )
+                },
+            ));
+        }
+        Ok(super::accumulate_explained(entries, &FirstWins))
+    }
+}
+
 impl<Id, Metadata, N> super::Fusion<Id, Metadata> for LinearFusion<N>
 where
     Id: Eq + Hash + Clone,
@@ -116,6 +156,13 @@ where
 
     fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError> {
         LinearFusion::fuse(self, lists)
+    }
+
+    fn fuse_explained(
+        &self,
+        lists: Vec<Self::Input>,
+    ) -> Result<Vec<crate::explain::Explained<Id, Metadata>>, FusionError> {
+        LinearFusion::fuse_explained(self, lists)
     }
 }
 
