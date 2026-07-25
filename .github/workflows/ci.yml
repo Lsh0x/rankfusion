@@ -34,8 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # ahash gets its own explicit entry when the feature lands (issue #6)
-        features: ["", "--all-features"]
+        features: ["", "--features ahash", "--all-features"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
