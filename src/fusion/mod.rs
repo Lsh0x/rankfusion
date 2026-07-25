@@ -22,6 +22,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 use crate::core::{Candidate, MergePolicy, RankedList, Scored};
+use crate::explain::{Explained, SourceContribution};
 
 /// Errors produced by fallible fusion strategies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -57,6 +58,14 @@ pub trait Fusion<Id, Metadata> {
     type Input;
 
     fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError>;
+
+    /// [`Fusion::fuse`] with per-source contribution tracing — see
+    /// [`crate::explain`]. Runs a separate accumulation path: `fuse` itself
+    /// pays no cost for this method's existence.
+    fn fuse_explained(
+        &self,
+        lists: Vec<Self::Input>,
+    ) -> Result<Vec<Explained<Id, Metadata>>, FusionError>;
 }
 
 struct Acc<Id, Metadata> {
@@ -108,6 +117,97 @@ where
             .then(a.first_seen.cmp(&b.first_seen))
     });
     out.into_iter().map(|a| a.scored).collect()
+}
+
+struct AccExplained<Id, Metadata> {
+    explained: Explained<Id, Metadata>,
+    first_seen: usize,
+}
+
+/// Explained twin of [`accumulate_contributions`]: same map, same sort, same
+/// first-seen tie-break, but each entry carries its [`SourceContribution`].
+/// Kept as a separate path so the plain accumulator stays untouched.
+pub(crate) fn accumulate_explained<Id, Metadata, P>(
+    entries: impl IntoIterator<Item = (Candidate<Id, Metadata>, SourceContribution)>,
+    policy: &P,
+) -> Vec<Explained<Id, Metadata>>
+where
+    Id: Eq + Hash + Clone,
+    P: MergePolicy<Metadata>,
+{
+    let mut acc: HashMap<Id, AccExplained<Id, Metadata>> = HashMap::new();
+    let mut first_seen = 0usize;
+
+    for (candidate, contribution) in entries {
+        match acc.entry(candidate.id.clone()) {
+            Entry::Occupied(mut entry) => {
+                let slot = entry.get_mut();
+                slot.explained.scored.score += contribution.partial_score;
+                slot.explained.contributions.push(contribution);
+                policy.merge(
+                    &mut slot.explained.scored.candidate.metadata,
+                    candidate.metadata,
+                );
+            }
+            Entry::Vacant(entry) => {
+                entry.insert(AccExplained {
+                    explained: Explained {
+                        scored: Scored {
+                            candidate,
+                            score: contribution.partial_score,
+                        },
+                        contributions: vec![contribution],
+                    },
+                    first_seen,
+                });
+                first_seen += 1;
+            }
+        }
+    }
+
+    let mut out: Vec<AccExplained<Id, Metadata>> = acc.into_values().collect();
+    out.sort_unstable_by(|a, b| {
+        b.explained
+            .scored
+            .score
+            .total_cmp(&a.explained.scored.score)
+            .then(a.first_seen.cmp(&b.first_seen))
+    });
+    out.into_iter().map(|a| a.explained).collect()
+}
+
+/// Explained twin of [`accumulate_rrf`].
+pub(crate) fn explained_rrf<Id, Metadata, P>(
+    k: f32,
+    lists: Vec<RankedList<Id, Metadata>>,
+    weights: Option<&[f32]>,
+    policy: &P,
+) -> Vec<Explained<Id, Metadata>>
+where
+    Id: Eq + Hash + Clone,
+    P: MergePolicy<Metadata>,
+{
+    let entries = lists
+        .into_iter()
+        .enumerate()
+        .flat_map(|(list_index, list)| {
+            let weight = weights.map_or(1.0, |w| w[list_index]);
+            list.items
+                .into_iter()
+                .enumerate()
+                .map(move |(position, candidate)| {
+                    let rank = position + 1;
+                    (
+                        candidate,
+                        SourceContribution {
+                            list_index,
+                            rank,
+                            partial_score: weight / (k + rank as f32),
+                        },
+                    )
+                })
+        });
+    accumulate_explained(entries, policy)
 }
 
 /// RRF accumulation: `score(c) = Σ weight_i / (k + rank_i(c))`, rank starting

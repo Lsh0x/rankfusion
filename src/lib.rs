@@ -57,11 +57,13 @@
 //! The roadmap lives in the [repository issues](https://github.com/Lsh0x/rankfusion/issues).
 
 pub mod core;
+pub mod explain;
 pub mod fusion;
 pub mod normalization;
 pub mod reranking;
 
 pub use crate::core::{Candidate, FirstWins, MergePolicy, RankedList, Scored, ScoredList};
+pub use crate::explain::{Explained, SourceContribution};
 pub use crate::fusion::{Fusion, FusionError, LinearFusion, Rrf, WeightedRrf};
 pub use crate::normalization::{MinMax, Normalizer, Softmax, ZScore};
 pub use crate::reranking::{Pipeline, Reranker, TopK};

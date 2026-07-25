@@ -58,6 +58,20 @@ where
         }
         Ok(candidates)
     }
+
+    /// Explain the fusion: per result, the contribution of every input list
+    /// (see [`crate::explain`]).
+    ///
+    /// Reranking stages are **not** applied — a stage mutating scores would
+    /// break the invariant that partial scores sum to the fused score, and
+    /// boosts are the caller's own code. Use [`Pipeline::rank`] for the final
+    /// post-stage ranking.
+    pub fn rank_explained(
+        &self,
+        lists: Vec<F::Input>,
+    ) -> Result<Vec<crate::explain::Explained<Id, Metadata>>, FusionError> {
+        self.fusion.fuse_explained(lists)
+    }
 }
 
 #[cfg(test)]
