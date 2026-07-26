@@ -51,10 +51,16 @@
 //! assert_eq!(*results[0].id(), "b");
 //! ```
 //!
-//! ## Status
+//! ## Feature flags
 //!
-//! `0.0.x` — API under active design, expect breaking changes until `0.1.0`.
-//! The roadmap lives in the [repository issues](https://github.com/Lsh0x/rankfusion/issues).
+//! - `ahash` — faster hashing for the fusion accumulators.
+//! - `eval` — ranking-quality metrics (`ndcg@k`, MRR, `recall@k`), zero extra
+//!   dependencies.
+//! - `serde` — `Serialize`/`Deserialize` on the core data model and
+//!   explainability types.
+
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
 
 pub mod core;
 #[cfg(feature = "eval")]

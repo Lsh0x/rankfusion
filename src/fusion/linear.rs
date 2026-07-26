@@ -48,6 +48,7 @@ impl LinearFusion<MinMax> {
 }
 
 impl<N: Normalizer> LinearFusion<N> {
+    /// Linear fusion with a custom [`Normalizer`].
     pub fn with_normalizer(weights: Vec<f32>, normalizer: N) -> Self {
         Self {
             weights,

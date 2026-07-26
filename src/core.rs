@@ -45,12 +45,16 @@
 /// `String`, or any custom type work. `Metadata` is an opaque payload carried
 /// through the pipeline untouched; the library never interprets it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Candidate<Id, Metadata = ()> {
+    /// External identifier of the candidate.
     pub id: Id,
+    /// Opaque payload carried through the pipeline untouched.
     pub metadata: Metadata,
 }
 
 impl<Id, Metadata> Candidate<Id, Metadata> {
+    /// A candidate with an attached metadata payload.
     pub fn new(id: Id, metadata: Metadata) -> Self {
         Self { id, metadata }
     }
@@ -68,12 +72,16 @@ impl<Id> Candidate<Id> {
 /// Produced by scored sources ([`ScoredList`]) and by every fusion strategy
 /// (the fused score). Higher scores rank first.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Scored<Id, Metadata = ()> {
+    /// The underlying candidate.
     pub candidate: Candidate<Id, Metadata>,
+    /// The candidate's score; higher ranks first.
     pub score: f32,
 }
 
 impl<Id, Metadata> Scored<Id, Metadata> {
+    /// A scored candidate from its id, score, and metadata.
     pub fn new(id: Id, score: f32, metadata: Metadata) -> Self {
         Self {
             candidate: Candidate::new(id, metadata),
@@ -81,6 +89,7 @@ impl<Id, Metadata> Scored<Id, Metadata> {
         }
     }
 
+    /// The candidate's id.
     pub fn id(&self) -> &Id {
         &self.candidate.id
     }
@@ -98,19 +107,24 @@ impl<Id, Metadata> Scored<Id, Metadata> {
 /// Lists may be empty, have any length, and share or omit candidates relative
 /// to other lists — fusion handles all of it.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RankedList<Id, Metadata = ()> {
+    /// Candidates in rank order, best first.
     pub items: Vec<Candidate<Id, Metadata>>,
 }
 
 impl<Id, Metadata> RankedList<Id, Metadata> {
+    /// A ranked list from candidates already in rank order, best first.
     pub fn new(items: Vec<Candidate<Id, Metadata>>) -> Self {
         Self { items }
     }
 
+    /// Number of candidates in the list.
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
+    /// Whether the list contains no candidates.
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
@@ -135,19 +149,24 @@ impl<Id> FromIterator<Id> for RankedList<Id> {
 /// never re-sorts an input list (a source may deliberately rank against its
 /// own scores).
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ScoredList<Id, Metadata = ()> {
+    /// Scored candidates in the source's own order, best first.
     pub items: Vec<Scored<Id, Metadata>>,
 }
 
 impl<Id, Metadata> ScoredList<Id, Metadata> {
+    /// A scored list from candidates already in the source's order.
     pub fn new(items: Vec<Scored<Id, Metadata>>) -> Self {
         Self { items }
     }
 
+    /// Number of candidates in the list.
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
+    /// Whether the list contains no candidates.
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
@@ -185,12 +204,14 @@ impl<Id, Metadata> From<ScoredList<Id, Metadata>> for RankedList<Id, Metadata> {
 /// assert_eq!(m, 7);
 /// ```
 pub trait MergePolicy<Metadata> {
+    /// Fold `incoming` into `kept`, the metadata retained so far.
     fn merge(&self, kept: &mut Metadata, incoming: Metadata);
 }
 
 /// Default merge policy: the first occurrence's metadata is kept, later
 /// occurrences are dropped.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FirstWins;
 
 impl<Metadata> MergePolicy<Metadata> for FirstWins {

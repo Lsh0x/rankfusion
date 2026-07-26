@@ -31,10 +31,12 @@ impl Rrf {
     /// The conventional default for `k`, from the original RRF paper.
     pub const DEFAULT_K: f32 = 60.0;
 
+    /// RRF with a custom `k` constant (see [`Rrf::DEFAULT_K`]).
     pub fn new(k: f32) -> Self {
         Self { k }
     }
 
+    /// The `k` constant used by this instance.
     pub fn k(&self) -> f32 {
         self.k
     }
@@ -87,6 +89,7 @@ pub struct WeightedRrf {
 }
 
 impl WeightedRrf {
+    /// Weighted RRF with a `k` constant and one weight per input list.
     pub fn new(k: f32, weights: Vec<f32>) -> Self {
         Self { k, weights }
     }

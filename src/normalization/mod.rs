@@ -23,6 +23,7 @@
 /// Implementations must be pure per-slice: no state carried across calls, no
 /// dependence on other lists.
 pub trait Normalizer {
+    /// Rewrite `scores` in place with their normalized values.
     fn normalize(&self, scores: &mut [f32]);
 }
 

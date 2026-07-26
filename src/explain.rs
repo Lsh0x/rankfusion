@@ -39,6 +39,7 @@ use crate::core::Scored;
 /// A contribution exists only for lists that actually contain the candidate,
 /// so `rank` (1-based position in that list) is always known.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SourceContribution {
     /// Index of the input list, in the order the lists were passed to fusion.
     pub list_index: usize,
@@ -50,7 +51,9 @@ pub struct SourceContribution {
 
 /// A fused result together with the per-source breakdown of its score.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Explained<Id, Metadata = ()> {
+    /// The fused result being explained.
     pub scored: Scored<Id, Metadata>,
     /// One entry per input list containing this candidate, in first-seen
     /// order (list order, then rank).
@@ -58,10 +61,12 @@ pub struct Explained<Id, Metadata = ()> {
 }
 
 impl<Id, Metadata> Explained<Id, Metadata> {
+    /// The candidate's id.
     pub fn id(&self) -> &Id {
         self.scored.id()
     }
 
+    /// The fused score (sum of all [`SourceContribution::partial_score`]s).
     pub fn score(&self) -> f32 {
         self.scored.score
     }
