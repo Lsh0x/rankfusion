@@ -91,3 +91,15 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  bench:
+    name: bench (compile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # Compile-only: benchmarks rot silently otherwise — nothing else in CI
+      # builds them, so a harness bump can land green and break `cargo bench`.
+      # Timings are deliberately not measured: shared runners vary by 10-30%,
+      # which is far more than any regression worth catching.
+      - run: cargo bench --no-run --all-features --locked
