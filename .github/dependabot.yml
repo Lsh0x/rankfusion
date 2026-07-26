@@ -13,3 +13,10 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    ignore:
+      # dtolnay/rust-toolchain is pinned by Rust version, not by action
+      # version: `@1.71` is the MSRV the msrv job verifies, and `@stable`
+      # elsewhere. Dependabot reads those tags as versions to bump, which
+      # would silently retarget the MSRV check. Update the pin by hand when
+      # the MSRV changes, alongside rust-version in Cargo.toml.
+      - dependency-name: dtolnay/rust-toolchain
