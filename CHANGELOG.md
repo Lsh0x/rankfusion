@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 Maintained by [release-plz](https://release-plz.dev/) from
 [conventional commits](https://www.conventionalcommits.org/).
 
+## [0.1.1](https://github.com/Lsh0x/rankfusion/compare/v0.1.0...v0.1.1) - 2026-07-26
+
+### Added
+
+- optional serde feature, property tests, and prod-ready hardening ([#19](https://github.com/Lsh0x/rankfusion/pull/19))
+
 ## [0.1.0] - 2026-07-25
 
 First real release — the complete v0.1.0 milestone.
