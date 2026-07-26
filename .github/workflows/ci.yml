@@ -34,7 +34,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        features: ["", "--features ahash", "--features eval", "--all-features"]
+        features:
+          - ""
+          - "--features ahash"
+          - "--features eval"
+          - "--features serde"
+          - "--all-features"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -51,9 +56,38 @@ jobs:
       - run: cargo doc --no-deps
 
   msrv:
-    name: msrv (1.70)
+    name: msrv (1.71)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.70
-      - run: cargo check --all-features
+      - uses: dtolnay/rust-toolchain@1.71
+      # --locked: the committed Cargo.lock is what the MSRV claim is verified
+      # against. Without it a fresh resolution can pull a dependency that
+      # raised its own MSRV, turning this job red on an unrelated PR.
+      - run: cargo check --all-features --locked
+
+  deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories bans sources licenses
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+      - uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

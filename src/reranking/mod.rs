@@ -42,6 +42,7 @@ use crate::core::Scored;
 /// assert_eq!(*fused[0].id(), "b");
 /// ```
 pub trait Reranker<Id, Metadata> {
+    /// Mutate the fused candidates in place: reorder, rescore, or truncate.
     fn rerank(&self, candidates: &mut Vec<Scored<Id, Metadata>>);
 }
 
@@ -64,6 +65,7 @@ pub struct TopK {
 }
 
 impl TopK {
+    /// A stage keeping only the first `k` candidates.
     pub fn new(k: usize) -> Self {
         Self { k }
     }

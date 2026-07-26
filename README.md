@@ -7,9 +7,10 @@
 
 **Backend-agnostic rank aggregation, score fusion, and reranking for Rust.**
 
-> ⚠️ **Status: early design phase (`0.0.x`).** The API is being designed in the
-> open — expect breaking changes until `0.1.0`. Follow the
-> [roadmap issues](https://github.com/Lsh0x/rankfusion/issues) to see where it's going.
+```toml
+[dependencies]
+rankfusion = "0.1"
+```
 
 ## What it is
 
@@ -41,7 +42,39 @@ RAG pipelines, personalization systems, data discovery — anything that produce
 ranked candidate lists. Retrieval and ranking are separate concerns; this crate
 is only the second one.
 
-## Planned for 0.1.0
+## Quick start
+
+Two retrieval systems answered the same query. Their scores are not
+comparable — only their order is. RRF turns that into one ranking:
+
+```rust
+use rankfusion::{Pipeline, RankedList, Rrf, Scored, TopK};
+
+let vector_search: RankedList<&str> = ["a", "b", "c"].into_iter().collect();
+let keyword_search: RankedList<&str> = ["b", "d", "a"].into_iter().collect();
+
+let freshness_boost = |candidates: &mut Vec<Scored<&str, ()>>| {
+    for c in candidates.iter_mut() {
+        if *c.id() == "d" {
+            c.score *= 1.5;
+        }
+    }
+    candidates.sort_by(Scored::cmp_score_desc);
+};
+
+let results = Pipeline::new(Rrf::default())
+    .reranker(freshness_boost)
+    .reranker(TopK::new(3))
+    .rank(vec![vector_search, keyword_search])
+    .unwrap();
+
+assert_eq!(*results[0].id(), "b"); // ranked highly by both sources
+```
+
+Runnable examples live in [`examples/`](examples): `cargo run --example
+basic_rrf`, `--example explain`, `--example pipeline`.
+
+## Features
 
 - **Core data model** — `Candidate<Id, Metadata>` with generic identifiers
   (`u64`, UUID, `String`, custom) and opaque metadata; explicit merge policy for
@@ -54,18 +87,29 @@ is only the second one.
 - **Reranking pipeline** — composable, synchronous, in-place `Reranker` stages
   (freshness boost, business rules, custom scoring). Async rerankers adapt
   outside the core.
-- **Explainability** — optional per-source score contribution tracing.
-- **`ahash` feature flag** — optional faster hashing; `std::collections::HashMap`
-  by default.
+- **Explainability** — per-source score contribution tracing via
+  `fuse_explained`, off the hot path.
+
+### Optional feature flags
+
+| Feature | Effect |
+|---------|--------|
+| `ahash` | Faster hashing for the fusion accumulators; `std::collections::HashMap` by default. |
+| `eval`  | Ranking-quality metrics: `ndcg@k`, MRR, `recall@k`. Zero extra dependencies. |
+| `serde` | `Serialize`/`Deserialize` on the core data model and explainability types. |
+
+Minimum supported Rust version: **1.71**, verified in CI against the committed
+`Cargo.lock`. Raising it is a breaking change and comes with a minor version
+bump.
 
 ## Evaluating your fusion config
 
-The optional `eval` feature (zero extra dependencies) ships `ndcg@k`, MRR and
-`recall@k` to compare fusion configurations against your own ground truth —
-RRF `k=60` vs `k=20`, RRF vs linear fusion, weight tuning:
+The optional `eval` feature ships `ndcg@k`, MRR and `recall@k` to compare
+fusion configurations against your own ground truth — RRF `k=60` vs `k=20`,
+RRF vs linear fusion, weight tuning:
 
 ```toml
-rankfusion = { version = "0.0", features = ["eval"] }
+rankfusion = { version = "0.1", features = ["eval"] }
 ```
 
 ```rust
@@ -81,6 +125,11 @@ Criterion benchmarks live in `benches/` (`cargo bench`) and back the
 
 ANN indexes, vector databases, BM25, tokenizers, embeddings, document storage,
 query parsing. Those belong to the external systems feeding this library.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the design invariants and the checks
+CI enforces. Vulnerabilities: [SECURITY.md](SECURITY.md).
 
 ## License
 

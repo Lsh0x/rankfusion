@@ -1,5 +1,4 @@
 /target
-Cargo.lock
 
 # anatta substrate scaffold — local only, never committed
 /.claude/

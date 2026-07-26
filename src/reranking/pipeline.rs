@@ -36,6 +36,7 @@ impl<F, Id, Metadata> Pipeline<F, Id, Metadata>
 where
     F: Fusion<Id, Metadata>,
 {
+    /// A pipeline around a fusion strategy, with no reranking stages yet.
     pub fn new(fusion: F) -> Self {
         Self {
             fusion,

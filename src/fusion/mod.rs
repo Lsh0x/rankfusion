@@ -36,7 +36,12 @@ use crate::explain::{Explained, SourceContribution};
 #[non_exhaustive]
 pub enum FusionError {
     /// The number of weights does not match the number of input lists.
-    WeightCountMismatch { expected: usize, got: usize },
+    WeightCountMismatch {
+        /// Number of input lists, i.e. the number of weights required.
+        expected: usize,
+        /// Number of weights actually provided.
+        got: usize,
+    },
 }
 
 impl std::fmt::Display for FusionError {
@@ -64,6 +69,7 @@ pub trait Fusion<Id, Metadata> {
     /// The input list type this strategy consumes.
     type Input;
 
+    /// Fuse the input lists into a single scored ranking, best first.
     fn fuse(&self, lists: Vec<Self::Input>) -> Result<Vec<Scored<Id, Metadata>>, FusionError>;
 
     /// [`Fusion::fuse`] with per-source contribution tracing — see
