@@ -98,6 +98,10 @@ basic_rrf`, `--example explain`, `--example pipeline`.
 | `eval`  | Ranking-quality metrics: `ndcg@k`, MRR, `recall@k`. Zero extra dependencies. |
 | `serde` | `Serialize`/`Deserialize` on the core data model and explainability types. |
 
+Minimum supported Rust version: **1.71**, verified in CI against the committed
+`Cargo.lock`. Raising it is a breaking change and comes with a minor version
+bump.
+
 ## Evaluating your fusion config
 
 The optional `eval` feature ships `ndcg@k`, MRR and `recall@k` to compare
