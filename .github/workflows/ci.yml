@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.71
+      - uses: dtolnay/rust-toolchain@1.100
       # --locked: the committed Cargo.lock is what the MSRV claim is verified
       # against. Without it a fresh resolution can pull a dependency that
       # raised its own MSRV, turning this job red on an unrelated PR.
